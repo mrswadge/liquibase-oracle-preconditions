@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+	targetNamespace="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns="http://www.liquibase.org/xml/ns/dbchangelog-ext" 
+	elementFormDefault="qualified">
+
+	<!-- Create View -->
+	<xsd:element name="createFlexibleView">
+		<xsd:complexType>
+			<xsd:simpleContent>
+				<xsd:extension base="xsd:string">
+					<xsd:attribute name="viewName" type="xsd:string" use="required" />
+				</xsd:extension>
+			</xsd:simpleContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<!-- Drop View -->
+	<xsd:element name="dropFlexibleView">
+		<xsd:complexType>
+			<xsd:attribute name="viewName" type="xsd:string" use="required" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<!-- Upgrade Views to Materialized Views -->
+	<xsd:element name="convertViewsIntoMaterializedViews"/>
+
+</xsd:schema>

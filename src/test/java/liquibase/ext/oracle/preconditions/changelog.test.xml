@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog 
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog" 
+	xmlns:orapre="http://www.liquibase.org/xml/ns/dbchangelog-ext" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://raw.githubusercontent.com/mrswadge/liquibase/master/liquibase-core/src/main/resources/liquibase/parser/core/xml/dbchangelog-3.2.xsd
+									http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+	<!-- 
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext ../../../liquibase/ext/flexibleview/xml/dbchangelog-ext.xsd
+											http://www.liquibase.org/xml/ns/dbchangelog ../../../liquibase/ext/flexibleview/xml/dbchangelog-3.2.xsd">
+	 -->
+
+	<changeSet id="mytable" author="sbs">
+		<createTable tableName="mytable">
+			<column name="one" type="varchar2(30)"/>
+			<column name="two" type="varchar2(30)"/>
+			<column name="three" type="varchar2(30)"/>
+			<column name="four" type="varchar2(30)"/>
+			<column name="five" type="varchar2(30)"/>
+			<column name="six" type="varchar2(30)"/>
+			<column name="seven" type="varchar2(30)"/>
+			<column name="eight" type="varchar2(30)"/>
+		</createTable>
+		<addPrimaryKey tableName="mytable" columnNames="one,two" constraintName="myprimarykey"/>
+		<addUniqueConstraint tableName="mytable" columnNames="two,three,four"/>
+		<createIndex tableName="mytable" indexName="myindex">
+			<column name="one"/>
+			<column name="two"/>
+			<column name="three"/>
+		</createIndex>
+	</changeSet>
+
+	<changeSet id="testresults" author="sbs">
+		<createTable tableName="testresults">
+			<column name="changeSetId" type="varchar2(30)"/>
+		</createTable>
+	</changeSet>
+
+	<changeSet id="myview" author="sbs">
+		<createView viewName="myview" replaceIfExists="true">select 1 as One from dual</createView>
+	</changeSet>
+
+	<!-- 
+	<changeSet id="mysequence" author="sbs">
+		<createSequence sequenceName="mysequence" minValue="0" maxValue="100" incrementBy="1"/>
+	</changeSet>
+	-->
+	
+	<!-- tables -->
+	
+	<changeSet id="iftableexists" author="sbs">
+		<preConditions>
+			<orapre:oracleTableExists tableName="mytable"/>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="iftableexists"/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="iftablenotexists" author="sbs">
+		<preConditions onFail="CONTINUE">
+			<not>
+				<orapre:oracleTableExists tableName="doesntexist"/>
+			</not>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="iftablenotexists"/>
+		</insert>
+	</changeSet>
+
+	<!-- views -->
+	
+	<changeSet id="ifviewexists" author="sbs">
+		<preConditions>
+			<orapre:oracleViewExists viewName="myview"/>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifviewexists"/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="ifviewnotexists" author="sbs">
+		<preConditions onFail="CONTINUE">
+			<not>
+				<orapre:oracleViewExists viewName="doesntexist"/>
+			</not>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifviewnotexists"/>
+		</insert>
+	</changeSet>
+	
+	<!-- indexes -->
+	
+	<changeSet id="ifindexexists1" author="sbs">
+		<preConditions>
+			<orapre:oracleIndexExists indexName="myindex"/>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifindexexists1"/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="ifindexexists2" author="sbs">
+		<preConditions>
+			<orapre:oracleIndexExists tableName="mytable" columnNames="one,two,three"/>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifindexexists2"/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="ifindexnotexists1" author="sbs">
+		<preConditions onFail="CONTINUE">
+			<not>
+				<orapre:oracleViewExists viewName="doesntexist"/>
+			</not>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifindexnotexists1"/>
+		</insert>
+	</changeSet>
+	
+</databaseChangeLog>
