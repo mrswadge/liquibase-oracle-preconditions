@@ -121,4 +121,26 @@
 		</insert>
 	</changeSet>
 	
+	<!-- primary keys -->
+	
+	<changeSet id="ifpkexists" author="sbs">
+		<preConditions>
+			<orapre:oraclePrimaryKeyExists tableName="mytable" constraintName="myprimarykey"/>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifpkexists"/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="ifpknotexists" author="sbs">
+		<preConditions onFail="CONTINUE">
+			<not>
+				<orapre:oraclePrimaryKeyExists tableName="mytable" constraintName="doesntexist"/>
+			</not>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifpknotexists"/>
+		</insert>
+	</changeSet>
+	
 </databaseChangeLog>

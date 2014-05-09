@@ -47,7 +47,11 @@ public class OraclePreconditionsTest extends BaseTestCase {
 
 	@Test
 	public void test() throws Exception {
-		final List<String> expected = Arrays.asList( "iftableexists", "iftablenotexists", "ifviewexists", "ifviewnotexists", "ifindexexists1", "ifindexexists2", "ifindexnotexists1" );
+		final List<String> expected = Arrays.asList( 
+				"iftableexists", "iftablenotexists", "ifviewexists", "ifviewnotexists", 
+				"ifindexexists1", "ifindexexists2", "ifindexnotexists1", "ifpkexists",
+				"ifpknotexists"
+		);
 		Executor executor = ExecutorService.getInstance().getExecutor( liquiBase.getDatabase() );
 		List<String> successes = executor.queryForList( new RawSqlStatement( "select * from testresults" ), String.class );
 		assertTrue( successes.containsAll( expected ) );
