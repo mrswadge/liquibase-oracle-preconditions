@@ -73,7 +73,7 @@ public class OracleIndexExistsPrecondition extends OraclePrecondition {
 		ResultSet rs = null;
 		try {
 			if ( getIndexName() != null ) {
-				final String sql = "select count(*) from all_indexes where upper(index_name) = upper(?) and upper(owner) = upper(?)";
+				final String sql = "select count(*) from all_indexes i join dual d on upper(i.index_name) = upper(?) and upper(i.owner) = upper(?) left join all_constraints c on i.index_name = c.constraint_name where c.constraint_name is null";
 				ps = connection.prepareStatement( sql );
 				ps.setString( 1, getIndexName() );
 				ps.setString( 2, database.getLiquibaseSchemaName() );
@@ -82,7 +82,7 @@ public class OracleIndexExistsPrecondition extends OraclePrecondition {
 					throw new PreconditionFailedException( String.format( "The index '%s.%s' was not found.", database.getLiquibaseSchemaName(), getIndexName() ), changeLog, this );
 				}
 			} else {
-				final String sql = "select index_name, column_name from all_ind_columns where upper(table_name) = upper (?) and upper(index_owner) = upper(?)";
+				final String sql = "select i.index_name, i.column_name from ( select * from all_ind_columns where upper(table_name) = upper (?) and upper(index_owner) = upper(?) ) i left join all_constraints c on i.index_name = c.constraint_name where c.constraint_name is null";
 				ps = connection.prepareStatement( sql );
 				ps.setString( 1, getTableName() );
 				ps.setString( 2, database.getLiquibaseSchemaName() );
