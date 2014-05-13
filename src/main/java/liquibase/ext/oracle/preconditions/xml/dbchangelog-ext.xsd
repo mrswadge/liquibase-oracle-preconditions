@@ -1,27 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
-	targetNamespace="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns="http://www.liquibase.org/xml/ns/dbchangelog-ext" 
-	elementFormDefault="qualified">
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns="http://www.liquibase.org/xml/ns/dbchangelog-ext" elementFormDefault="qualified">
 
-	<!-- Create View -->
-	<xsd:element name="createFlexibleView">
+	<xsd:element name="oracleCheckConstraintExists">
 		<xsd:complexType>
-			<xsd:simpleContent>
-				<xsd:extension base="xsd:string">
-					<xsd:attribute name="viewName" type="xsd:string" use="required" />
-				</xsd:extension>
-			</xsd:simpleContent>
+			<xsd:attribute name="tableName" type="xsd:string" />
+			<xsd:attribute name="constraintName" type="xsd:string" />
 		</xsd:complexType>
 	</xsd:element>
 
-	<!-- Drop View -->
-	<xsd:element name="dropFlexibleView">
+	<xsd:element name="oracleColumnExists">
+		<xsd:complexType>
+			<xsd:attribute name="tableName" type="xsd:string" use="required" />
+			<xsd:attribute name="columnName" type="xsd:string" use="required" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="oracleForeignKeyExists">
+		<xsd:complexType>
+			<xsd:attribute name="tableName" type="xsd:string" />
+			<xsd:attribute name="constraintName" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="oracleIndexExists">
+		<xsd:complexType>
+			<xsd:attribute name="indexName" type="xsd:string" />
+			<xsd:attribute name="tableName" type="xsd:string" />
+			<xsd:attribute name="columnNames" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="oraclePrimaryKeyExists">
+		<xsd:complexType>
+			<xsd:attribute name="primaryKeyName" type="xsd:string" />
+			<xsd:attribute name="tableName" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="oracleSequenceExists">
+		<xsd:complexType>
+			<xsd:attribute name="sequenceName" type="xsd:string" use="required" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="oracleTableExists">
+		<xsd:complexType>
+			<xsd:attribute name="tableName" type="xsd:string" use="required" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="oracleUniqueConstraintExists">
+		<xsd:complexType>
+			<xsd:attribute name="tableName" type="xsd:string" />
+			<xsd:attribute name="constraintName" type="xsd:string" />
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="oracleViewExists">
 		<xsd:complexType>
 			<xsd:attribute name="viewName" type="xsd:string" use="required" />
 		</xsd:complexType>
 	</xsd:element>
-
-	<!-- Upgrade Views to Materialized Views -->
-	<xsd:element name="convertViewsIntoMaterializedViews"/>
 
 </xsd:schema>
