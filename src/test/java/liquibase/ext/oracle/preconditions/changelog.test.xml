@@ -125,7 +125,7 @@
 	
 	<changeSet id="ifpkexists" author="sbs">
 		<preConditions>
-			<orapre:oraclePrimaryKeyExists tableName="mytable" constraintName="myprimarykey"/>
+			<orapre:oraclePrimaryKeyExists tableName="mytable" primaryKeyName="myprimarykey"/>
 		</preConditions>
 		<insert tableName="testresults">
 			<column name="changeSetId" value="ifpkexists"/>
@@ -135,7 +135,7 @@
 	<changeSet id="ifpknotexists" author="sbs">
 		<preConditions onFail="CONTINUE">
 			<not>
-				<orapre:oraclePrimaryKeyExists tableName="mytable" constraintName="doesntexist"/>
+				<orapre:oraclePrimaryKeyExists tableName="mytable" primaryKeyName="doesntexist"/>
 			</not>
 		</preConditions>
 		<insert tableName="testresults">
