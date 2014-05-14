@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog 
 	xmlns="http://www.liquibase.org/xml/ns/dbchangelog" 
-	xmlns:orapre="http://www.liquibase.org/xml/ns/dbchangelog-ext" 
+	xmlns:orapre="http://www.liquibase.org/xml/ns/dbchangelog-orapre-ext" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://raw.githubusercontent.com/mrswadge/liquibase/master/liquibase-core/src/main/resources/liquibase/parser/core/xml/dbchangelog-3.2.xsd
-									http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
-	<!-- 
-	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext ../../../liquibase/ext/flexibleview/xml/dbchangelog-ext.xsd
-											http://www.liquibase.org/xml/ns/dbchangelog ../../../liquibase/ext/flexibleview/xml/dbchangelog-3.2.xsd">
-	 -->
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext ../../../../liquibase/ext/oracle/preconditions/xml/dbchangelog-ext.xsd
+											http://www.liquibase.org/xml/ns/dbchangelog ../../../../liquibase/ext/oracle/preconditions/xml/dbchangelog-3.2.xsd">
 
 	<changeSet id="mytable" author="sbs">
 		<createTable tableName="mytable">
@@ -28,6 +24,14 @@
 			<column name="two"/>
 			<column name="three"/>
 		</createIndex>
+		<createTable tableName="myforeigntable">
+			<column name="alpha" type="varchar2(30)"/>
+			<column name="beta" type="varchar2(30)"/>
+			<column name="gamma" type="varchar2(30)"/>
+		</createTable>
+		<addPrimaryKey tableName="myforeigntable" columnNames="alpha,beta" constraintName="myforeignprimarykey"/>
+		<addForeignKeyConstraint constraintName="myforeignkey" referencedTableName="myforeigntable" referencedColumnNames="alpha,beta" baseTableName="mytable" baseColumnNames="one,two"/>
+		<createSequence sequenceName="mysequence" minValue="0" maxValue="100" startValue="0"/>
 	</changeSet>
 
 	<changeSet id="testresults" author="sbs">
@@ -40,12 +44,6 @@
 		<createView viewName="myview" replaceIfExists="true">select 1 as One from dual</createView>
 	</changeSet>
 
-	<!-- 
-	<changeSet id="mysequence" author="sbs">
-		<createSequence sequenceName="mysequence" minValue="0" maxValue="100" incrementBy="1"/>
-	</changeSet>
-	-->
-	
 	<!-- tables -->
 	
 	<changeSet id="iftableexists" author="sbs">
@@ -140,6 +138,50 @@
 		</preConditions>
 		<insert tableName="testresults">
 			<column name="changeSetId" value="ifpknotexists"/>
+		</insert>
+	</changeSet>
+
+	<!-- foreign keys -->
+	
+	<changeSet id="iffkexists" author="sbs">
+		<preConditions>
+			<orapre:oracleForeignKeyExists tableName="mytable" constraintName="myforeignkey" />
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="iffkexists"/>
+		</insert>
+	</changeSet>
+	
+	<changeSet id="iffknotexists" author="sbs">
+		<preConditions>
+			<not>
+				<orapre:oracleForeignKeyExists tableName="mytable" constraintName="doesntexist" />
+			</not>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="iffknotexists"/>
+		</insert>
+	</changeSet>
+	
+	<!--  sequences -->
+	
+	<changeSet id="ifsequenceexists" author="sbs">
+		<preConditions>
+				<orapre:oracleSequenceExists sequenceName="mysequence"/>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifsequenceexists"/>
+		</insert>
+	</changeSet>
+	
+	<changeSet id="ifsequencenotexists" author="sbs">
+		<preConditions>
+			<not>
+				<orapre:oracleSequenceExists sequenceName="doesntexist"/>
+			</not>
+		</preConditions>
+		<insert tableName="testresults">
+			<column name="changeSetId" value="ifsequencenotexists"/>
 		</insert>
 	</changeSet>
 	
