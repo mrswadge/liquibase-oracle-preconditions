@@ -19,6 +19,7 @@ import liquibase.exception.PreconditionFailedException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
 import liquibase.precondition.Precondition;
+import liquibase.util.StringUtils;
 
 public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition {
 
@@ -66,14 +67,22 @@ public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition {
 			P - Primary key
 			C - Check constraint
 		 */
-			final String sql = "select count(*) from all_constraints where upper(constraint_name) = upper(?) and table_name = upper(?) and upper(owner) = upper(?) and constraint_type = 'P'";
+			final String sql = "select constraint_name from all_constraints where table_name = upper(?) and upper(owner) = upper(?) and constraint_type = 'P'";
 			ps = connection.prepareStatement( sql );
-			ps.setString( 1, getPrimaryKeyName() );
-			ps.setString( 2, getTableName() );
-			ps.setString( 3, database.getLiquibaseSchemaName() );
+			ps.setString( 1, getTableName() );
+			ps.setString( 2, database.getLiquibaseSchemaName() );
 			rs = ps.executeQuery();
-			if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
+
+			if ( !rs.next() ) {
 				throw new PreconditionFailedException( String.format( "The primary key '%s' was not found on the table '%s.%s'.", getPrimaryKeyName(), database.getLiquibaseSchemaName(), getTableName() ), changeLog, this );
+			} else {
+				String name = rs.getString( 1 );
+				if ( getPrimaryKeyName() != null && getPrimaryKeyName().length() > 0 ) {
+					// check the name is the same, otherwise presume we are fine.
+					if ( ! name.equalsIgnoreCase( getPrimaryKeyName() ) ) {
+						throw new PreconditionFailedException( String.format( "The primary key '%s' was not found on the table '%s.%s'.", getPrimaryKeyName(), database.getLiquibaseSchemaName(), getTableName() ), changeLog, this );
+					}
+				}
 			}
 		} catch ( SQLException e ) {
 			throw new PreconditionErrorException( e, changeLog, this );
