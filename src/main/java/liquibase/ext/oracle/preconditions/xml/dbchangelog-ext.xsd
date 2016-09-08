@@ -62,4 +62,10 @@
 		</xsd:complexType>
 	</xsd:element>
 
+	<xsd:element name="oracleMaterializedViewExists">
+		<xsd:complexType>
+			<xsd:attribute name="viewName" type="xsd:string" use="required" />
+		</xsd:complexType>
+	</xsd:element>
+
 </xsd:schema>
