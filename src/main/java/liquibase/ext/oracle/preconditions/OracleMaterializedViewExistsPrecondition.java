@@ -3,11 +3,6 @@ package liquibase.ext.oracle.preconditions;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
@@ -16,9 +11,9 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
+import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
-import liquibase.precondition.Precondition;
 
 public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition {
 
@@ -45,6 +40,12 @@ public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition
 	}
 
 	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet ) throws PreconditionFailedException, PreconditionErrorException {
+		if ( ! check( database ) ) {
+			throw new PreconditionFailedException( String.format( "The view '%s.%s' was not found.", database.getLiquibaseSchemaName(), getViewName() ), changeLog, this );
+		}
+	}
+	
+	public boolean check( Database database ) throws UnexpectedLiquibaseException {
 		JdbcConnection connection = (JdbcConnection) database.getConnection();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -55,12 +56,14 @@ public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition
 			ps.setString( 2, database.getLiquibaseSchemaName() );
 			rs = ps.executeQuery();
 			if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
-				throw new PreconditionFailedException( String.format( "The view '%s.%s' was not found.", database.getLiquibaseSchemaName(), getViewName() ), changeLog, this );
+				return false;
+			} else {
+				return true;
 			}
 		} catch ( SQLException e ) {
-			throw new PreconditionErrorException( e, changeLog, this );
+			throw new UnexpectedLiquibaseException( "Failed on database view investigation.", e );
 		} catch ( DatabaseException e ) {
-			throw new PreconditionErrorException( e, changeLog, this );
+			throw new UnexpectedLiquibaseException( "Failed on database view investigation.", e );
 		} finally {
 			closeSilently( rs );
 			closeSilently( ps );
