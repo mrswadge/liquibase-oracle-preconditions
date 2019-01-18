@@ -3,15 +3,17 @@ package liquibase.ext.oracle.preconditions;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
 import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
-import liquibase.exception.ValidationErrors;
-import liquibase.exception.Warnings;
+import liquibase.parser.core.ParsedNode;
+import liquibase.parser.core.ParsedNodeException;
 import liquibase.precondition.Precondition;
+import liquibase.resource.ResourceAccessor;
 
 public abstract class OraclePrecondition implements Precondition {
 
@@ -33,4 +35,38 @@ public abstract class OraclePrecondition implements Precondition {
 		}
 	}
 
+	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet ) throws PreconditionFailedException, PreconditionErrorException {
+		check( database, changeLog, changeSet, null );
+	}
+	
+	public void load( ParsedNode parsedNode, ResourceAccessor resourceAccessor ) throws ParsedNodeException {
+	}
+
+	public String getSerializedObjectName() {
+		return null;
+	}
+
+	public Set<String> getSerializableFields() {
+		return null;
+	}
+
+	public Object getSerializableFieldValue( String field ) {
+		return null;
+	}
+
+	public SerializationType getSerializableFieldType( String field ) {
+		return null;
+	}
+
+	public String getSerializableFieldNamespace( String field ) {
+		return null;
+	}
+
+	public String getSerializedObjectNamespace() {
+		return null;
+	}
+
+	public ParsedNode serialize() throws ParsedNodeException {
+		return null;
+	}
 }

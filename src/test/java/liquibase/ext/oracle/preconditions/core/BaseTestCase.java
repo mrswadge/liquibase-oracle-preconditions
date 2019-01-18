@@ -4,7 +4,6 @@ import java.io.FileInputStream;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.util.Properties;
 
 import liquibase.Liquibase;
@@ -13,10 +12,8 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
-import liquibase.ext.ora.dropmaterializedview.DropMaterializedViewOracle;
 import liquibase.ext.ora.dropmaterializedview.DropMaterializedViewStatement;
 import liquibase.resource.ClassLoaderResourceAccessor;
-import liquibase.sql.Sql;
 
 /*
  * Class used by tests to set up connection and clean database.

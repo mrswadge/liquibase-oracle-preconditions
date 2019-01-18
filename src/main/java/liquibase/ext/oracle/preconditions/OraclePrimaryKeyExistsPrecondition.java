@@ -3,14 +3,10 @@ package liquibase.ext.oracle.preconditions;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
+import liquibase.changelog.visitor.ChangeExecListener;
 import liquibase.database.Database;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
@@ -18,8 +14,6 @@ import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
-import liquibase.precondition.Precondition;
-import liquibase.util.StringUtils;
 
 public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition {
 
@@ -54,7 +48,7 @@ public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition {
 		return new ValidationErrors();
 	}
 
-	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet ) throws PreconditionFailedException, PreconditionErrorException {
+	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet, ChangeExecListener changeExecListener ) throws PreconditionFailedException, PreconditionErrorException {
 		JdbcConnection connection = (JdbcConnection) database.getConnection();
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -66,13 +60,13 @@ public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition {
 			U - Unique key
 			P - Primary key
 			C - Check constraint
-		 */
+			 */
 			final String sql = "select constraint_name from all_constraints where table_name = upper(?) and upper(owner) = upper(?) and constraint_type = 'P'";
 			ps = connection.prepareStatement( sql );
 			ps.setString( 1, getTableName() );
 			ps.setString( 2, database.getLiquibaseSchemaName() );
 			rs = ps.executeQuery();
-
+			
 			if ( !rs.next() ) {
 				throw new PreconditionFailedException( String.format( "The primary key '%s' was not found on the table '%s.%s'.", getPrimaryKeyName(), database.getLiquibaseSchemaName(), getTableName() ), changeLog, this );
 			} else {
@@ -93,5 +87,4 @@ public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition {
 			closeSilently( ps );
 		}
 	}
-
 }
