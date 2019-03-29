@@ -19,6 +19,9 @@ import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
+import liquibase.parser.core.ParsedNode;
+import liquibase.parser.core.ParsedNodeException;
+import liquibase.resource.ResourceAccessor;
 
 public class OracleIndexExistsPrecondition extends OraclePrecondition {
 
@@ -121,5 +124,13 @@ public class OracleIndexExistsPrecondition extends OraclePrecondition {
 			closeSilently( rs );
 			closeSilently( ps );
 		}
+	}
+	
+	@Override
+	public void load( ParsedNode parsedNode, ResourceAccessor resourceAccessor ) throws ParsedNodeException {
+		super.load( parsedNode, resourceAccessor );
+    this.columnNames = parsedNode.getChildValue(null, "columnNames", String.class);
+    this.indexName = parsedNode.getChildValue(null, "indexName", String.class);
+    this.tableName = parsedNode.getChildValue(null, "tableName", String.class);
 	}
 }

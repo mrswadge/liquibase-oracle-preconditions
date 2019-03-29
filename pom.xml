@@ -2,14 +2,14 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>liquibase.ext.oracle.preconditions</groupId>
 	<artifactId>liquibase-oracle-preconditions</artifactId>
-	<version>3.7.0-SNAPSHOT</version>
+	<version>3.6.3</version>
 
 	<properties>
 		<oracle.version>12.2.0.1</oracle.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<junit.version>4.11</junit.version>
-		<liquibase.core.version>3.7.0-SNAPSHOT</liquibase.core.version>
-		<liquibase.oracle.version>3.3-SNAPSHOT</liquibase.oracle.version>
+		<liquibase.core.version>3.6.3</liquibase.core.version>
+		<liquibase.oracle.version>3.2</liquibase.oracle.version>
 	</properties>
 
 	<build>

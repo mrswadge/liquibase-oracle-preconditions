@@ -14,8 +14,11 @@ import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
+import liquibase.parser.core.ParsedNode;
+import liquibase.parser.core.ParsedNodeException;
+import liquibase.resource.ResourceAccessor;
 
-public class OracleSeqeunceExistsPrecondition extends OraclePrecondition {
+public class OracleSequenceExistsPrecondition extends OraclePrecondition {
 
 	private String sequenceName;
 
@@ -62,4 +65,9 @@ public class OracleSeqeunceExistsPrecondition extends OraclePrecondition {
 		}
 	}
 
+	@Override
+	public void load( ParsedNode parsedNode, ResourceAccessor resourceAccessor ) throws ParsedNodeException {
+		super.load( parsedNode, resourceAccessor );
+    this.sequenceName = parsedNode.getChildValue(null, "sequenceName", String.class);
+	}
 }

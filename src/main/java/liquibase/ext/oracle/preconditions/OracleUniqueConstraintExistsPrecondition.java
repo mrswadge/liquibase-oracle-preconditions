@@ -14,6 +14,9 @@ import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
+import liquibase.parser.core.ParsedNode;
+import liquibase.parser.core.ParsedNodeException;
+import liquibase.resource.ResourceAccessor;
 
 public class OracleUniqueConstraintExistsPrecondition extends OraclePrecondition {
 
@@ -81,4 +84,10 @@ public class OracleUniqueConstraintExistsPrecondition extends OraclePrecondition
 		}
 	}
 
+	@Override
+	public void load( ParsedNode parsedNode, ResourceAccessor resourceAccessor ) throws ParsedNodeException {
+		super.load( parsedNode, resourceAccessor );
+    this.tableName = parsedNode.getChildValue(null, "tableName", String.class);
+    this.constraintName = parsedNode.getChildValue(null, "constraintName", String.class);
+	}
 }

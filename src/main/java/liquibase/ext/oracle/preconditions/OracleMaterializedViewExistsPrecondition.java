@@ -15,6 +15,9 @@ import liquibase.exception.PreconditionFailedException;
 import liquibase.exception.UnexpectedLiquibaseException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
+import liquibase.parser.core.ParsedNode;
+import liquibase.parser.core.ParsedNodeException;
+import liquibase.resource.ResourceAccessor;
 
 public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition {
 
@@ -71,4 +74,9 @@ public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition
 		}
 	}
 
+	@Override
+	public void load( ParsedNode parsedNode, ResourceAccessor resourceAccessor ) throws ParsedNodeException {
+		super.load( parsedNode, resourceAccessor );
+    this.viewName = parsedNode.getChildValue(null, "viewName", String.class);
+	}
 }

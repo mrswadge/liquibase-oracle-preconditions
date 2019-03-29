@@ -14,6 +14,9 @@ import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
+import liquibase.parser.core.ParsedNode;
+import liquibase.parser.core.ParsedNodeException;
+import liquibase.resource.ResourceAccessor;
 
 public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition {
 
@@ -86,5 +89,12 @@ public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition {
 			closeSilently( rs );
 			closeSilently( ps );
 		}
+	}
+	
+	@Override
+	public void load( ParsedNode parsedNode, ResourceAccessor resourceAccessor ) throws ParsedNodeException {
+		super.load( parsedNode, resourceAccessor );
+    this.tableName = parsedNode.getChildValue(null, "tableName", String.class);
+    this.primaryKeyName = parsedNode.getChildValue(null, "primaryKeyName", String.class);
 	}
 }

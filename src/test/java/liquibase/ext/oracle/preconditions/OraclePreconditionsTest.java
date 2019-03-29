@@ -2,10 +2,14 @@ package liquibase.ext.oracle.preconditions;
 
 import static org.junit.Assert.*;
 
+import java.net.URL;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import liquibase.Contexts;
 import liquibase.change.Change;
@@ -23,12 +27,15 @@ import liquibase.executor.Executor;
 import liquibase.executor.ExecutorService;
 import liquibase.ext.oracle.preconditions.core.BaseTestCase;
 import liquibase.parser.ChangeLogParserFactory;
+import liquibase.precondition.Precondition;
+import liquibase.precondition.PreconditionFactory;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 import liquibase.sql.Sql;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
 import liquibase.statement.SqlStatement;
 import liquibase.statement.core.RawSqlStatement;
+import liquibase.util.FileUtil;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -58,4 +65,26 @@ public class OraclePreconditionsTest extends BaseTestCase {
 		assertTrue( successes.containsAll( expected ) );
 	}
 
+	@Test
+	public void testRegistry() throws Exception {
+		Map<String, Class<? extends Precondition>> preconditions = PreconditionFactory.getInstance().getPreconditions();
+		checkRegistry( preconditions, OracleCheckConstraintExistsPrecondition.class );
+		checkRegistry( preconditions, OracleColumnExistsPrecondition.class );
+		checkRegistry( preconditions, OracleForeignKeyExistsPrecondition.class );
+		checkRegistry( preconditions, OracleIndexExistsPrecondition.class );
+		checkRegistry( preconditions, OracleMaterializedViewExistsPrecondition.class );
+		checkRegistry( preconditions, OraclePrimaryKeyExistsPrecondition.class );
+		checkRegistry( preconditions, OracleSequenceExistsPrecondition.class );
+		checkRegistry( preconditions, OracleTableExistsPrecondition.class );
+		checkRegistry( preconditions, OracleUniqueConstraintExistsPrecondition.class );
+		checkRegistry( preconditions, OracleViewExistsPrecondition.class );
+	}
+
+	private void checkRegistry( Map<String, Class<? extends Precondition>> registry, Class<? extends Precondition> clazz ) throws InstantiationException, IllegalAccessException {
+		Precondition precondition = clazz.newInstance();
+		String name = precondition.getName();
+		Class<? extends Precondition> mappedClazz = registry.get( name );
+		assertEquals( clazz, mappedClazz );
+	}
+	
 }
