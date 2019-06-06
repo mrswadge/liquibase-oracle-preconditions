@@ -1,5 +1,8 @@
 package liquibase.ext.oracle.preconditions;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,6 +11,7 @@ import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.changelog.visitor.ChangeExecListener;
 import liquibase.database.Database;
+import liquibase.database.core.MSSQLDatabase;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.PreconditionErrorException;
@@ -17,9 +21,11 @@ import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
 import liquibase.parser.core.ParsedNode;
 import liquibase.parser.core.ParsedNodeException;
+import liquibase.precondition.AbstractPrecondition;
+import liquibase.precondition.Precondition;
 import liquibase.resource.ResourceAccessor;
 
-public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition {
+public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition<Precondition> {
 
 	private String viewName;
 
@@ -35,12 +41,32 @@ public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition
 		return "oracleMaterializedViewExists";
 	}
 
+	@Override
+	protected Precondition fallback( Database database ) {
+		// create a proxy instance so we have a return value to this method.
+		return (Precondition) Proxy.newProxyInstance( this.getClass().getClassLoader(), new Class[] { Precondition.class }, new InvocationHandler() {
+			public Object invoke( Object proxy, Method method, Object[] args ) throws Throwable {
+				throw new AbstractMethodError( "Fallback precondition for " + getName() +  " is not implemented." );
+			}
+		} );
+	}
+	
 	public Warnings warn( Database database ) {
-		return new Warnings();
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			return new Warnings();
+		} else {
+			return redirect.warn( database );
+		}
 	}
 
 	public ValidationErrors validate( Database database ) {
-		return new ValidationErrors();
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			return new ValidationErrors();
+		} else {
+			return redirect.validate( database );
+		}
 	}
 
 	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet, ChangeExecListener changeExecListener ) throws PreconditionFailedException, PreconditionErrorException {
@@ -49,28 +75,34 @@ public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition
 		}
 	}
 	
-	public boolean check( Database database ) throws UnexpectedLiquibaseException {
-		JdbcConnection connection = (JdbcConnection) database.getConnection();
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			final String sql = "select count(*) from all_mviews where upper(mview_name) = upper(?) and upper(owner) = upper(?)";
-			ps = connection.prepareStatement( sql );
-			ps.setString( 1, getViewName() );
-			ps.setString( 2, database.getLiquibaseSchemaName() );
-			rs = ps.executeQuery();
-			if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
-				return false;
-			} else {
-				return true;
+	public boolean check( Database database ) throws PreconditionFailedException, UnexpectedLiquibaseException {
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			JdbcConnection connection = (JdbcConnection) database.getConnection();
+			PreparedStatement ps = null;
+			ResultSet rs = null;
+			try {
+				final String sql = "select count(*) from all_mviews where upper(mview_name) = upper(?) and upper(owner) = upper(?)";
+				ps = connection.prepareStatement( sql );
+				ps.setString( 1, getViewName() );
+				ps.setString( 2, database.getLiquibaseSchemaName() );
+				rs = ps.executeQuery();
+				if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
+					return false;
+				} else {
+					return true;
+				}
+			} catch ( SQLException e ) {
+				throw new UnexpectedLiquibaseException( "Failed on database view investigation.", e );
+			} catch ( DatabaseException e ) {
+				throw new UnexpectedLiquibaseException( "Failed on database view investigation.", e );
+			} finally {
+				closeSilently( rs );
+				closeSilently( ps );
 			}
-		} catch ( SQLException e ) {
-			throw new UnexpectedLiquibaseException( "Failed on database view investigation.", e );
-		} catch ( DatabaseException e ) {
-			throw new UnexpectedLiquibaseException( "Failed on database view investigation.", e );
-		} finally {
-			closeSilently( rs );
-			closeSilently( ps );
+		} else {
+			// assume that it does not exist.
+			return false;
 		}
 	}
 

@@ -16,9 +16,11 @@ import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
 import liquibase.parser.core.ParsedNode;
 import liquibase.parser.core.ParsedNodeException;
+import liquibase.precondition.Precondition;
+import liquibase.precondition.core.SequenceExistsPrecondition;
 import liquibase.resource.ResourceAccessor;
 
-public class OracleSequenceExistsPrecondition extends OraclePrecondition {
+public class OracleSequenceExistsPrecondition extends OraclePrecondition<SequenceExistsPrecondition> {
 
 	private String sequenceName;
 
@@ -34,34 +36,58 @@ public class OracleSequenceExistsPrecondition extends OraclePrecondition {
 		return "oracleSequenceExists";
 	}
 
+	@Override
+	protected SequenceExistsPrecondition fallback( Database database ) {
+		SequenceExistsPrecondition fallback = new SequenceExistsPrecondition();
+		fallback.setCatalogName( database.getLiquibaseCatalogName() );
+		fallback.setSchemaName( database.getLiquibaseSchemaName() );
+		fallback.setSequenceName( getSequenceName() );
+		return fallback;
+	}
+	
 	public Warnings warn( Database database ) {
-		return new Warnings();
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			return new Warnings();
+		} else {
+			return redirect.warn( database );
+		}
 	}
 
 	public ValidationErrors validate( Database database ) {
-		return new ValidationErrors();
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			return new ValidationErrors();
+		} else {
+			return redirect.validate( database );
+		}
 	}
 
 	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet, ChangeExecListener changeExecListener ) throws PreconditionFailedException, PreconditionErrorException {
-		JdbcConnection connection = (JdbcConnection) database.getConnection();
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			final String sql = "select count(*) from all_sequences where upper(sequence_name) = upper(?) and upper(sequence_owner) = upper(?)";
-			ps = connection.prepareStatement( sql );
-			ps.setString( 1, getSequenceName() );
-			ps.setString( 2, database.getLiquibaseSchemaName() );
-			rs = ps.executeQuery();
-			if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
-				throw new PreconditionFailedException( String.format( "The sequence '%s.%s' was not found.", database.getLiquibaseSchemaName(), getSequenceName() ), changeLog, this );
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			JdbcConnection connection = (JdbcConnection) database.getConnection();
+			PreparedStatement ps = null;
+			ResultSet rs = null;
+			try {
+				final String sql = "select count(*) from all_sequences where upper(sequence_name) = upper(?) and upper(sequence_owner) = upper(?)";
+				ps = connection.prepareStatement( sql );
+				ps.setString( 1, getSequenceName() );
+				ps.setString( 2, database.getLiquibaseSchemaName() );
+				rs = ps.executeQuery();
+				if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
+					throw new PreconditionFailedException( String.format( "The sequence '%s.%s' was not found.", database.getLiquibaseSchemaName(), getSequenceName() ), changeLog, this );
+				}
+			} catch ( SQLException e ) {
+				throw new PreconditionErrorException( e, changeLog, this );
+			} catch ( DatabaseException e ) {
+				throw new PreconditionErrorException( e, changeLog, this );
+			} finally {
+				closeSilently( rs );
+				closeSilently( ps );
 			}
-		} catch ( SQLException e ) {
-			throw new PreconditionErrorException( e, changeLog, this );
-		} catch ( DatabaseException e ) {
-			throw new PreconditionErrorException( e, changeLog, this );
-		} finally {
-			closeSilently( rs );
-			closeSilently( ps );
+		} else {
+			redirect.check( database, changeLog, changeSet, changeExecListener );
 		}
 	}
 

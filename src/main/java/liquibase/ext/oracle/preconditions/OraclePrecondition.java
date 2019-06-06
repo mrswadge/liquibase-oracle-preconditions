@@ -8,6 +8,7 @@ import java.util.Set;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
+import liquibase.database.core.OracleDatabase;
 import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
 import liquibase.parser.core.ParsedNode;
@@ -15,8 +16,10 @@ import liquibase.parser.core.ParsedNodeException;
 import liquibase.precondition.Precondition;
 import liquibase.resource.ResourceAccessor;
 
-public abstract class OraclePrecondition implements Precondition {
+public abstract class OraclePrecondition<R extends Precondition> implements Precondition {
 
+	protected R redirect = null;
+	
 	void closeSilently( PreparedStatement ps ) {
 		if ( ps != null ) {
 			try {
@@ -69,4 +72,15 @@ public abstract class OraclePrecondition implements Precondition {
 	public ParsedNode serialize() throws ParsedNodeException {
 		return null;
 	}
+	
+	protected R redirected( Database database ) {
+		if ( ! ( database instanceof OracleDatabase ) ) {
+			if (redirect == null) {
+				redirect = fallback( database );
+			}
+		}
+		return redirect;
+	}
+	
+	protected abstract R fallback( Database database );
 }

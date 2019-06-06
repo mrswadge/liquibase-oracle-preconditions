@@ -21,9 +21,11 @@ import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
 import liquibase.parser.core.ParsedNode;
 import liquibase.parser.core.ParsedNodeException;
+import liquibase.precondition.Precondition;
+import liquibase.precondition.core.IndexExistsPrecondition;
 import liquibase.resource.ResourceAccessor;
 
-public class OracleIndexExistsPrecondition extends OraclePrecondition {
+public class OracleIndexExistsPrecondition extends OraclePrecondition<IndexExistsPrecondition> {
 
 	private String indexName;
 	private String tableName;
@@ -57,72 +59,98 @@ public class OracleIndexExistsPrecondition extends OraclePrecondition {
 		return "oracleIndexExists";
 	}
 
+	@Override
+	protected IndexExistsPrecondition fallback( Database database ) {
+		IndexExistsPrecondition fallback = new IndexExistsPrecondition();
+		fallback.setCatalogName( database.getLiquibaseCatalogName() );
+		fallback.setSchemaName( database.getLiquibaseSchemaName() );
+		fallback.setIndexName( getIndexName() );
+		fallback.setTableName( getTableName() );
+		fallback.setColumnNames( getColumnNames() );
+		return fallback;
+	}
+	
 	public Warnings warn( Database database ) {
-		return new Warnings();
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			return new Warnings();
+		} else {
+			return redirect.warn( database );
+		}
 	}
 
 	public ValidationErrors validate( Database database ) {
-		ValidationErrors validationErrors = new ValidationErrors();
-		if ( getIndexName() == null && getTableName() == null && getColumnNames() == null ) {
-			validationErrors.addError( "indexName OR tableName and columnNames is required" );
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			ValidationErrors validationErrors = new ValidationErrors();
+			if ( getIndexName() == null && getTableName() == null && getColumnNames() == null ) {
+				validationErrors.addError( "indexName OR tableName and columnNames is required" );
+			}
+			return validationErrors;
+		} else {
+			return redirect.validate( database );
 		}
-		return validationErrors;
 	}
 
 	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet, ChangeExecListener changeExecListener ) throws PreconditionFailedException, PreconditionErrorException {
-		JdbcConnection connection = (JdbcConnection) database.getConnection();
-
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			if ( getIndexName() != null ) {
-				final String sql = "select count(*) from all_indexes i join dual d on upper(i.index_name) = upper(?) and upper(i.owner) = upper(?) left join all_constraints c on i.index_name = c.constraint_name where c.constraint_name is null";
-				ps = connection.prepareStatement( sql );
-				ps.setString( 1, getIndexName() );
-				ps.setString( 2, database.getLiquibaseSchemaName() );
-				rs = ps.executeQuery();
-				if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
-					throw new PreconditionFailedException( String.format( "The index '%s.%s' was not found.", database.getLiquibaseSchemaName(), getIndexName() ), changeLog, this );
-				}
-			} else {
-				final String sql = "select i.index_name, i.column_name from ( select * from all_ind_columns where upper(table_name) = upper (?) and upper(index_owner) = upper(?) ) i left join all_constraints c on i.index_name = c.constraint_name where c.constraint_name is null";
-				ps = connection.prepareStatement( sql );
-				ps.setString( 1, getTableName() );
-				ps.setString( 2, database.getLiquibaseSchemaName() );
-				rs = ps.executeQuery();
-
-				Map<String, List<String>> columnsMap = new HashMap<String, List<String>>();
-				while ( rs.next() ) {
-					String indexName = rs.getString( 1 );
-					String columnName = rs.getString( 2 );
-					List<String> cols = columnsMap.get( indexName );
-					if ( cols == null ) {
-						cols = new ArrayList<String>();
-						columnsMap.put( indexName, cols );
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			JdbcConnection connection = (JdbcConnection) database.getConnection();
+	
+			PreparedStatement ps = null;
+			ResultSet rs = null;
+			try {
+				if ( getIndexName() != null ) {
+					final String sql = "select count(*) from all_indexes i join dual d on upper(i.index_name) = upper(?) and upper(i.owner) = upper(?) left join all_constraints c on i.index_name = c.constraint_name where c.constraint_name is null";
+					ps = connection.prepareStatement( sql );
+					ps.setString( 1, getIndexName() );
+					ps.setString( 2, database.getLiquibaseSchemaName() );
+					rs = ps.executeQuery();
+					if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
+						throw new PreconditionFailedException( String.format( "The index '%s.%s' was not found.", database.getLiquibaseSchemaName(), getIndexName() ), changeLog, this );
 					}
-					cols.add( columnName.toUpperCase() );
-				}
-
-				String[] expectedColumns = getColumnNames().toUpperCase().split( "\\s*,\\s*" );
-
-				// check for an index with all columns listed.
-				for ( String index : columnsMap.keySet() ) {
-					List<String> columnNames = columnsMap.get( index );
-					if ( columnNames.size() == expectedColumns.length ) {
-						if ( columnNames.containsAll( Arrays.asList( expectedColumns ) ) ) {
-							return;
+				} else {
+					final String sql = "select i.index_name, i.column_name from ( select * from all_ind_columns where upper(table_name) = upper (?) and upper(index_owner) = upper(?) ) i left join all_constraints c on i.index_name = c.constraint_name where c.constraint_name is null";
+					ps = connection.prepareStatement( sql );
+					ps.setString( 1, getTableName() );
+					ps.setString( 2, database.getLiquibaseSchemaName() );
+					rs = ps.executeQuery();
+	
+					Map<String, List<String>> columnsMap = new HashMap<String, List<String>>();
+					while ( rs.next() ) {
+						String indexName = rs.getString( 1 );
+						String columnName = rs.getString( 2 );
+						List<String> cols = columnsMap.get( indexName );
+						if ( cols == null ) {
+							cols = new ArrayList<String>();
+							columnsMap.put( indexName, cols );
+						}
+						cols.add( columnName.toUpperCase() );
+					}
+	
+					String[] expectedColumns = getColumnNames().toUpperCase().split( "\\s*,\\s*" );
+	
+					// check for an index with all columns listed.
+					for ( String index : columnsMap.keySet() ) {
+						List<String> columnNames = columnsMap.get( index );
+						if ( columnNames.size() == expectedColumns.length ) {
+							if ( columnNames.containsAll( Arrays.asList( expectedColumns ) ) ) {
+								return;
+							}
 						}
 					}
+					throw new PreconditionFailedException( String.format( "No index was found on table '%s.%s' with columns '%s'.", database.getLiquibaseSchemaName(), getTableName(), getColumnNames() ), changeLog, this );
 				}
-				throw new PreconditionFailedException( String.format( "No index was found on table '%s.%s' with columns '%s'.", database.getLiquibaseSchemaName(), getTableName(), getColumnNames() ), changeLog, this );
+			} catch ( SQLException e ) {
+				throw new PreconditionErrorException( e, changeLog, this );
+			} catch ( DatabaseException e ) {
+				throw new PreconditionErrorException( e, changeLog, this );
+			} finally {
+				closeSilently( rs );
+				closeSilently( ps );
 			}
-		} catch ( SQLException e ) {
-			throw new PreconditionErrorException( e, changeLog, this );
-		} catch ( DatabaseException e ) {
-			throw new PreconditionErrorException( e, changeLog, this );
-		} finally {
-			closeSilently( rs );
-			closeSilently( ps );
+		} else {
+			redirect.check( database, changeLog, changeSet, changeExecListener );
 		}
 	}
 	

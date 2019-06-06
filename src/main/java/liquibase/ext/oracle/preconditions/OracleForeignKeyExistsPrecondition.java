@@ -16,9 +16,11 @@ import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
 import liquibase.parser.core.ParsedNode;
 import liquibase.parser.core.ParsedNodeException;
+import liquibase.precondition.Precondition;
+import liquibase.precondition.core.ForeignKeyExistsPrecondition;
 import liquibase.resource.ResourceAccessor;
 
-public class OracleForeignKeyExistsPrecondition extends OraclePrecondition {
+public class OracleForeignKeyExistsPrecondition extends OraclePrecondition<ForeignKeyExistsPrecondition> {
 
 	private String constraintName;
 	private String tableName;
@@ -43,44 +45,69 @@ public class OracleForeignKeyExistsPrecondition extends OraclePrecondition {
 		this.constraintName = constraintName;
 	}
 
+	@Override
+	protected ForeignKeyExistsPrecondition fallback( Database database ) {
+		ForeignKeyExistsPrecondition fallback = new ForeignKeyExistsPrecondition();
+		fallback.setCatalogName( database.getLiquibaseCatalogName() );
+		fallback.setSchemaName( database.getLiquibaseSchemaName() );
+		fallback.setForeignKeyName( getConstraintName() );
+		fallback.setForeignKeyTableName( getTableName() );
+		return fallback;
+	}
+	
 	public Warnings warn( Database database ) {
-		return new Warnings();
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			return new Warnings();
+		} else {
+			return redirect.warn( database );
+		}
 	}
 
 	public ValidationErrors validate( Database database ) {
-		return new ValidationErrors();
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			return new ValidationErrors();
+		} else {
+			return redirect.validate( database );
+		}
 	}
 
 	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet, ChangeExecListener changeExecListener ) throws PreconditionFailedException, PreconditionErrorException {
-		JdbcConnection connection = (JdbcConnection) database.getConnection();
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			/*
-				THE CONSTRAINT_TYPE will tell you what type of constraint it is
+		Precondition redirect = redirected( database );
+		if ( redirect == null ) {
+			JdbcConnection connection = (JdbcConnection) database.getConnection();
+			PreparedStatement ps = null;
+			ResultSet rs = null;
+			try {
+				/*
+					THE CONSTRAINT_TYPE will tell you what type of constraint it is
+					
+					R - Referential key ( foreign key)
+					U - Unique key
+					P - Primary key
+					C - Check constraint
+				 */
 				
-				R - Referential key ( foreign key)
-				U - Unique key
-				P - Primary key
-				C - Check constraint
-			 */
-			
-			final String sql = "select count(*) from all_constraints where upper(constraint_name) = upper(?) and table_name = upper(?) and upper(owner) = upper(?) and constraint_type = 'R'";
-			ps = connection.prepareStatement( sql );
-			ps.setString( 1, getConstraintName() );
-			ps.setString( 2, getTableName() );
-			ps.setString( 3, database.getLiquibaseSchemaName() );
-			rs = ps.executeQuery();
-			if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
-				throw new PreconditionFailedException( String.format( "The primary key '%s' was not found on the table '%s.%s'.", getConstraintName(), database.getLiquibaseSchemaName(), getTableName() ), changeLog, this );
+				final String sql = "select count(*) from all_constraints where upper(constraint_name) = upper(?) and table_name = upper(?) and upper(owner) = upper(?) and constraint_type = 'R'";
+				ps = connection.prepareStatement( sql );
+				ps.setString( 1, getConstraintName() );
+				ps.setString( 2, getTableName() );
+				ps.setString( 3, database.getLiquibaseSchemaName() );
+				rs = ps.executeQuery();
+				if ( !rs.next() || rs.getInt( 1 ) <= 0 ) {
+					throw new PreconditionFailedException( String.format( "The primary key '%s' was not found on the table '%s.%s'.", getConstraintName(), database.getLiquibaseSchemaName(), getTableName() ), changeLog, this );
+				}
+			} catch ( SQLException e ) {
+				throw new PreconditionErrorException( e, changeLog, this );
+			} catch ( DatabaseException e ) {
+				throw new PreconditionErrorException( e, changeLog, this );
+			} finally {
+				closeSilently( rs );
+				closeSilently( ps );
 			}
-		} catch ( SQLException e ) {
-			throw new PreconditionErrorException( e, changeLog, this );
-		} catch ( DatabaseException e ) {
-			throw new PreconditionErrorException( e, changeLog, this );
-		} finally {
-			closeSilently( rs );
-			closeSilently( ps );
+		} else {
+			redirect.check( database, changeLog, changeSet, changeExecListener );
 		}
 	}
 
