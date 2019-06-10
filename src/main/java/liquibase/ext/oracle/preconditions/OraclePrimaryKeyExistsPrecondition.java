@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import liquibase.Liquibase;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.changelog.visitor.ChangeExecListener;
@@ -14,6 +15,8 @@ import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
 import liquibase.exception.ValidationErrors;
 import liquibase.exception.Warnings;
+import liquibase.logging.LogService;
+import liquibase.logging.Logger;
 import liquibase.parser.core.ParsedNode;
 import liquibase.parser.core.ParsedNodeException;
 import liquibase.precondition.Precondition;
@@ -21,6 +24,8 @@ import liquibase.precondition.core.PrimaryKeyExistsPrecondition;
 import liquibase.resource.ResourceAccessor;
 
 public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition<PrimaryKeyExistsPrecondition> {
+
+  private static final Logger LOG = LogService.getLog(OraclePrimaryKeyExistsPrecondition.class);
 
 	private String primaryKeyName;
 	private String tableName;
@@ -99,9 +104,9 @@ public class OraclePrimaryKeyExistsPrecondition extends OraclePrecondition<Prima
 				} else {
 					String name = rs.getString( 1 );
 					if ( getPrimaryKeyName() != null && getPrimaryKeyName().length() > 0 ) {
-						// check the name is the same, otherwise presume we are fine.
+						// In Liquibase 3.6.3 the requirement is that a primary key is present. It does not have to share the same name as the names are generated and provided by the database.
 						if ( ! name.equalsIgnoreCase( getPrimaryKeyName() ) ) {
-							throw new PreconditionFailedException( String.format( "The primary key '%s' was not found on the table '%s.%s'.", getPrimaryKeyName(), database.getLiquibaseSchemaName(), getTableName() ), changeLog, this );
+							LOG.warning( String.format( "The primary key '%s' was not found on the table '%s.%s', but instead a primary key '%s' was found.", getPrimaryKeyName(), database.getLiquibaseSchemaName(), getTableName(), name ) );
 						}
 					}
 				}

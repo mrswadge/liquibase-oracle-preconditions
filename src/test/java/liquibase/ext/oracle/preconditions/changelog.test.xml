@@ -6,6 +6,12 @@
 	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext ../../../../liquibase/ext/oracle/preconditions/xml/dbchangelog-ext.xsd
 											http://www.liquibase.org/xml/ns/dbchangelog ../../../../liquibase/ext/oracle/preconditions/xml/dbchangelog-3.2.xsd">
 
+	<changeSet id="emptytable" author="sbs">
+		<createTable tableName="emptytable">
+			<column name="dummy" type="varchar2(30)"/>
+		</createTable>
+	</changeSet>
+
 	<changeSet id="mytable" author="sbs">
 		<createTable tableName="mytable">
 			<column name="one" type="varchar2(30)"/>
@@ -133,7 +139,7 @@
 	<changeSet id="ifpknotexists" author="sbs">
 		<preConditions onFail="CONTINUE">
 			<not>
-				<orapre:oraclePrimaryKeyExists tableName="mytable" primaryKeyName="doesntexist"/>
+				<orapre:oraclePrimaryKeyExists tableName="emptytable" primaryKeyName="doesntexist"/>
 			</not>
 		</preConditions>
 		<insert tableName="testresults">

@@ -52,21 +52,13 @@ public class OracleMaterializedViewExistsPrecondition extends OraclePrecondition
 	}
 	
 	public Warnings warn( Database database ) {
-		Precondition redirect = redirected( database );
-		if ( redirect == null ) {
-			return new Warnings();
-		} else {
-			return redirect.warn( database );
-		}
+		// No redirect required.
+		return new Warnings();
 	}
 
 	public ValidationErrors validate( Database database ) {
-		Precondition redirect = redirected( database );
-		if ( redirect == null ) {
-			return new ValidationErrors();
-		} else {
-			return redirect.validate( database );
-		}
+		// No redirect required.
+		return new ValidationErrors();
 	}
 
 	public void check( Database database, DatabaseChangeLog changeLog, ChangeSet changeSet, ChangeExecListener changeExecListener ) throws PreconditionFailedException, PreconditionErrorException {
